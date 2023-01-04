@@ -43,7 +43,7 @@ router.post('/addbillingaddress',common.postcheckBrand,brandscontroller.addBilli
 router.post('/updatebillingaddress',common.postcheckBrand,brandscontroller.updateBillingAddress);
 router.post('/deletebillingaddress',common.postcheckBrand,brandscontroller.deleteBillingAddress);
 router.post('/deletebillingaddress',common.postcheckBrand,brandscontroller.deleteBillingAddress);
-router.post('/brandaction',common.postcheckBrand,brandscontroller.brandAction);
+router.post('/brandaction',common.postcheckBrand,brandscontroller.brandAction);///
 router.post('/uploadimage',common.postcheckBrand, upload.single('profileimage'), brandscontroller.uploadImage);
 
 module.exports = router;
