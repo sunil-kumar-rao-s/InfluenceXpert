@@ -617,3 +617,40 @@ exports.createInfluencer = [
       }
     }
   ];
+
+  exports.updatePassword = [
+    sanitizeBody("influencerId").trim(),
+    sanitizeBody("oldPassword").trim(),
+    sanitizeBody("newPassword").trim(),
+    async (req, res) => {
+      try {
+        let data = await Influencer.findOne({
+          _id: req.body.influencerId,
+  
+        }, (err, client) => {
+  
+          if (!client.autheticate(req.body.oldPassword)) {
+            return res.status(203).json({
+              status: false,
+              message: "Old password doesnt match.",
+  
+            });
+          } else {
+  
+            client.password = req.body.newPassword;
+            client.save();
+            return res.status(200).json({
+              status: true,
+              message: "Password changed Successfully.",
+            });
+          }
+        });
+      } catch (err) {
+        res.status(500).json({
+          status: false,
+          message: "Something went wrong!!!",
+          error: err
+        });
+      }
+    }
+  ];

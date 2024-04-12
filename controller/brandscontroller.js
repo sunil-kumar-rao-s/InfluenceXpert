@@ -5,17 +5,40 @@ const {
   const {
     sanitizeBody
   } = require("express-validator/filter");
+  var hbs = require('nodemailer-express-handlebars');
   var path = require('path')
+  const nodemailer = require("nodemailer"); 
   const Aws = require('aws-sdk')    
   const Brands = require("../schema/brandschema");
   const multer = require('multer')            
   const Campaigns = require("../schema/campaign");
   const Influencer = require("../schema/influencer");
   
+  const otpSchema = require("../schema/otpschema");
+  
   const s3 = new Aws.S3({
     accessKeyId:"AKIA3LOZEMDNHC6HNRWA",              // accessKeyId that is stored in .env file
     secretAccessKey:"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"       // secretAccessKey is also store in .env file
 })
+
+let transporter = nodemailer.createTransport({
+  host: "feedmyev.com",
+  port: 465,
+  secure: true, // true for 465, false for other ports
+  auth: {
+    user: "sunil@feedmyev.com", // generated ethereal user
+    pass: "$unil'soff!ce", // generated ethereal password
+  },
+});
+sut = hbs({
+  viewEngine: {
+    partialsDir: 'partials/',
+    defaultLayout: false
+  },
+  viewPath: path.resolve(__dirname, '../email_template')
+});
+
+  transporter.use('compile', sut);
 
 
   exports.createBrand = [
@@ -25,44 +48,145 @@ const {
     sanitizeBody("city").trim(),
     sanitizeBody("password").trim(),
     sanitizeBody("isVerified").trim(),
+    sanitizeBody("otp").trim(),
     async (req, res) => {
       try {
-        let mobileNumberData = await Brands.findOne({
-          $or: [{
-            phone: req.body.phone,
-            email: req.body.email
-          }]
-        });
-        if (mobileNumberData) {
-          res.status(203).json({
-            status: false,
-            message: "Email or phone number already exist."
-          });
-        } else {
-          const user = new Brands({
-            brandName: req.body.brandName,
-            email: req.body.email,
-            phone: req.body.phone,
-            city: req.body.city,
-            password: req.body.password,
-            // isVerified: req.body.isVerified,
-          });
-          try {
-            const data = await user.save();
-            res.status(200).json({
-              status: true,
-              message: "User created successfully.",
-              data
-            });
-          } catch (err) {
-           
+
+        let otpdata =await otpSchema.findOne({email:req.body.email,otp:req.body.otp});
+          if(!otpdata){
             res.status(203).json({
               status: false,
-              message: "Could not able to create user.",
-              error: err
+              message: "incorrect OTP!!!"
             });
           }
-        }
+          else{
+            let mobileNumberData = Brands.findOne({
+              $or: [{
+                phone: req.body.phone,
+                email: req.body.email
+              }]
+            },function(err,resp){
+            if (resp) {
+              res.status(203).json({
+                status: false,
+                message: "Email or phone number already exist."
+              });
+            } else {
+              const user = new Brands({
+                brandName: req.body.brandName,
+                email: req.body.email,
+                phone: req.body.phone,
+                city: req.body.city,
+                password: req.body.password,
+                // isVerified: req.body.isVerified,
+              });
+            
+                
+                const data =  user.save(function(err,resp){
+                  if(err){
+                    res.status(500).json({
+                      status: false,
+                      message: "Something went wrong!!!",
+                      error: err
+                    });
+                  }
+                  else{
+                    res.status(200).json({
+                      status: true,
+                      message: "User created successfully",
+                      data
+                    });
+                  }
+                });
+                transporter.sendMail({
+                  from: 'sunil@feedmyev.com', // sender address
+                  to: req.body.email, // list of receivers
+                  subject: "Registration Success", // Subject line
+                  template:"registration", 
+                  attachments: [{
+                    filename: 'IE_logo.png',
+                    path: './public/images/IE_logo.png',
+                    cid: 'IElogo'
+              }],
+                  context: {                      
+                    username : req.body.brandName,
+                    useremail: req.body.email  
+                    }
+                });
+               
+                
+             
+            }
+          });
+          }
+        
+        
+      
+        
+      } catch (err) {
+        console.log(err)
+        res.status(500).json({
+          status: false,
+          message: "Something went wrong!!!",
+          error: err
+        });
+      }
+    }
+  ];
+
+  exports.createBrandOtpAuth = [
+    
+    sanitizeBody("email"),
+    async (req, res) => {
+      try {
+  
+        let OTP = '';
+            for (let i = 0; i < 6; i++) {
+              OTP += [Math.floor(Math.random() * 10)];
+            }
+
+            transporter.sendMail({
+              from: 'sunil@feedmyev.com', // sender address
+              to: req.body.email, // list of receivers
+              subject: "OTP for InfluenceXpert", // Subject line
+              template:"otptemplate", 
+              attachments: [{
+                filename: 'IE_logo.png',
+                path: './public/images/IE_logo.png',
+                cid: 'IElogo'
+          }],
+              context: {                      
+                generated_otp : OTP  
+                }
+            }); 
+            await otpSchema.findOne({email:req.body.email},function(err,resp){
+            
+            if(err){
+              const otpdata = new otpSchema({
+              email:req.body.email,
+              otp: OTP
+            })
+            otpdata.save();
+            res.status(200).json({
+              status: true,
+              message: "OTP sent successfully"
+              
+            });
+          }
+            else{
+              otpSchema.findOneAndUpdate({email:req.body.email},{otp:OTP},function(err,resp){
+                if(err){}
+                else{
+                  res.status(200).json({
+                    status: true,
+                    message: "OTP sent successfully"
+                    
+                  });
+                }
+              });
+  
+          }
+          });
       } catch (err) {
         res.status(500).json({
           status: false,
@@ -600,5 +724,64 @@ const {
       }
       
       
+    }
+  ];
+
+  exports.updatePassword = [
+    sanitizeBody("brandId").trim(),
+    sanitizeBody("oldPassword").trim(),
+    sanitizeBody("newPassword").trim(),
+    async (req, res) => {
+      try {
+        let data = await Brands.findOne({
+          _id: req.body.brandId,
+  
+        }, (err, client) => {
+  
+          if (!client.autheticate(req.body.oldPassword)) {
+            return res.status(203).json({
+              status: false,
+              message: "Old password doesnt match.",
+  
+            });
+          } else {
+  
+            client.password = req.body.newPassword;
+            client.save();
+            transporter.sendMail({
+              from: 'sunil@feedmyev.com', // sender address
+              to: req.body.email, // list of receivers
+              subject: "Hello ✔", // Subject line
+              template:"index", // plain text body
+              
+              context: {                      
+                username : req.body.brandName   
+                }
+            },function(err,resp){
+              if(err){
+                console.log(err);
+                res.status(203).json({
+                  status: false,
+                  message: "Something went wrong!!!",
+                  error: err
+                });
+              }
+              else{
+                res.status(200).json({
+                  status: true,
+                  message: "User created successfully.",
+                  data
+                });
+              }
+            });
+          }
+        });
+      } catch (err) {
+        res.status(500).json({
+          status: false,
+          message: "Something went wrong!!!",
+          error: err
+        });
+      }
     }
   ];

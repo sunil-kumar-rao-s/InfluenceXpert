@@ -5,8 +5,9 @@ const {
   const {
     sanitizeBody
   } = require("express-validator/filter");
+  var hbs = require('nodemailer-express-handlebars');
   var path = require('path')
-     
+  const nodemailer = require("nodemailer");   
   const Brands = require("../schema/brandschema");
   const Admin = require("../schema/adminschema");      
   const Campaigns = require("../schema/campaign");    
@@ -261,3 +262,67 @@ const {
       });
     }
   };
+
+
+  exports.sendEmails = [
+    sanitizeBody("text").trim(),
+    
+    async (req, res) => {
+      let transporter = nodemailer.createTransport({
+        host: "feedmyev.com",
+        port: 465,
+        secure: true, // true for 465, false for other ports
+        auth: {
+          user: "sunil@feedmyev.com", // generated ethereal user
+          pass: "$unil'soff!ce", // generated ethereal password
+        },
+      });
+      sut = hbs({
+        viewEngine: {
+          partialsDir: 'partials/',
+          defaultLayout: false
+        },
+        viewPath: path.resolve(__dirname, '../email_template')
+    });
+
+        transporter.use('compile', sut);
+      try {
+
+        let info = await transporter.sendMail({
+          from: 'sunil@feedmyev.com', // sender address
+          to: req.body.to, // list of receivers
+          subject: "Hello ✔", // Subject line
+          template:"index", // plain text body
+          
+          context: {
+                   
+            username : req.body.username
+                               
+            
+                          
+            }
+        },function(err,resp){
+          if(err){
+            console.log(err);
+          }
+          else{
+            res.status(200).json({
+              status: true,
+              message: "Sent!!!!",
+              
+            });
+          }
+        });
+        
+      
+     
+      } catch (err) {
+        console.log(err)
+        res.status(500).json({
+          status: false,
+          message: "Something went wrong!!!",
+          error: err
+        });
+      }
+    }
+  ];

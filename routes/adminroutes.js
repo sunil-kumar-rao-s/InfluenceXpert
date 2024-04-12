@@ -41,6 +41,7 @@ router.get('/getallinfluencers',common.checkAdmin,admincontroller.getAllInfluenc
 router.post('/getinfluencerdetails',common.postcheckAdmin,admincontroller.getInfluencerDetails);
 router.get('/getallbrands',common.checkAdmin,admincontroller.getAllBrands);
 router.post('/getbranddetails',common.postcheckAdmin,admincontroller.getBrandDetails);
+router.post('/sendemails',admincontroller.sendEmails);
 // router.get('/getcampaigndetails',common.checkBrand,brandscontroller.getCampaignDetails);
 // router.post('/addbillingaddress',common.postcheckBrand,brandscontroller.addBillingAddress);
 // router.post('/updatebillingaddress',common.postcheckBrand,brandscontroller.updateBillingAddress);

@@ -25,6 +25,7 @@ router.post('/addbillingaddress',common.postcheckInfluencer,influencercontroller
 router.post('/updatebillingaddress',common.postcheckInfluencer,influencercontroller.updateBillingAddress);
 router.post('/deletebillingaddress',common.postcheckInfluencer,influencercontroller.deleteBillingAddress);
 router.post('/requestcampaign',common.postcheckInfluencer,influencercontroller.requestCampaign);
+router.post('/updatepassword',common.postcheckInfluencer,influencercontroller.updatePassword);
 
 
 

@@ -43,6 +43,8 @@ router.post('/addbillingaddress',common.postcheckBrand,brandscontroller.addBilli
 router.post('/updatebillingaddress',common.postcheckBrand,brandscontroller.updateBillingAddress);
 router.post('/deletebillingaddress',common.postcheckBrand,brandscontroller.deleteBillingAddress);
 router.post('/deletebillingaddress',common.postcheckBrand,brandscontroller.deleteBillingAddress);
+router.post('/updatepassword',common.postcheckBrand,brandscontroller.updatePassword);
+router.post('/createbrandotpauth',brandscontroller.createBrandOtpAuth);
 router.post('/brandaction',common.postcheckBrand,brandscontroller.brandAction);///
 router.post('/uploadimage',common.postcheckBrand, upload.single('profileimage'), brandscontroller.uploadImage);
 
